@@ -59,6 +59,11 @@ public class DqRuleExecuteSql implements Serializable {
     @TableField(value = "type")
     private ExecuteSqlType type = ExecuteSqlType.MIDDLE;
     /**
+     * is error output sql
+     */
+    @TableField(value = "is_error_output_sql")
+    private boolean isErrorOutputSql;
+    /**
      * create_time
      */
     @TableField(value = "create_time")
@@ -111,6 +116,14 @@ public class DqRuleExecuteSql implements Serializable {
         this.type = type;
     }
 
+    public boolean isErrorOutputSql() {
+        return isErrorOutputSql;
+    }
+
+    public void setErrorOutputSql(boolean errorOutputSql) {
+        isErrorOutputSql = errorOutputSql;
+    }
+
     public Date getCreateTime() {
         return createTime;
     }
@@ -135,6 +148,7 @@ public class DqRuleExecuteSql implements Serializable {
                 + ", sql='" + sql + '\''
                 + ", tableAlias='" + tableAlias + '\''
                 + ", type=" + type
+                + ", isErrorOutputSql=" + isErrorOutputSql
                 + ", createTime=" + createTime
                 + ", updateTime=" + updateTime
                 + '}';

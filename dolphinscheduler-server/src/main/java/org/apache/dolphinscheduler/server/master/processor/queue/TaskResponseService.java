@@ -19,20 +19,13 @@ package org.apache.dolphinscheduler.server.master.processor.queue;
 
 import org.apache.dolphinscheduler.common.enums.Event;
 import org.apache.dolphinscheduler.common.enums.ExecutionStatus;
-import org.apache.dolphinscheduler.common.enums.TaskType;
-import org.apache.dolphinscheduler.common.enums.dq.CheckType;
-import org.apache.dolphinscheduler.common.enums.dq.DqFailureStrategy;
-import org.apache.dolphinscheduler.common.enums.dq.DqTaskState;
-import org.apache.dolphinscheduler.common.enums.dq.OperatorType;
 import org.apache.dolphinscheduler.common.thread.Stopper;
-import org.apache.dolphinscheduler.dao.entity.DqExecuteResult;
 import org.apache.dolphinscheduler.dao.entity.TaskInstance;
 import org.apache.dolphinscheduler.remote.command.DBTaskAckCommand;
 import org.apache.dolphinscheduler.remote.command.DBTaskResponseCommand;
-import org.apache.dolphinscheduler.server.utils.AlertManager;
+import org.apache.dolphinscheduler.server.utils.DataQualityResultOperator;
 import org.apache.dolphinscheduler.service.process.ProcessService;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -71,14 +64,15 @@ public class TaskResponseService {
     private ProcessService processService;
 
     /**
+     * data quality result operator
+     */
+    @Autowired
+    private DataQualityResultOperator dataQualityResultOperator;
+
+    /**
      * task response worker
      */
     private Thread taskResponseWorker;
-
-    /**
-     * alert manager
-     */
-    private AlertManager alertManager = new AlertManager();
 
     @PostConstruct
     public void start() {
@@ -156,8 +150,7 @@ public class TaskResponseService {
                             taskResponseEvent.getStartTime(),
                             taskResponseEvent.getWorkerAddress(),
                             taskResponseEvent.getExecutePath(),
-                            taskResponseEvent.getLogPath(),
-                            taskResponseEvent.getTaskInstanceId());
+                            taskResponseEvent.getLogPath());
                     }
                     // if taskInstance is null (maybe deleted) . retry will be meaningless . so ack success
                     DBTaskAckCommand taskAckCommand = new DBTaskAckCommand(ExecutionStatus.SUCCESS.getCode(), taskResponseEvent.getTaskInstanceId());
@@ -173,13 +166,12 @@ public class TaskResponseService {
                     TaskInstance taskInstance = processService.findTaskInstanceById(taskResponseEvent.getTaskInstanceId());
                     if (taskInstance != null) {
 
-                        operateDqExecuteResult(taskResponseEvent, taskInstance);
+                        dataQualityResultOperator.operateDqExecuteResult(taskResponseEvent, taskInstance);
 
                         processService.changeTaskState(taskInstance, taskResponseEvent.getState(),
                                 taskResponseEvent.getEndTime(),
                                 taskResponseEvent.getProcessId(),
                                 taskResponseEvent.getAppIds(),
-                                taskResponseEvent.getTaskInstanceId(),
                                 taskResponseEvent.getVarPool()
                         );
                     }
@@ -194,102 +186,6 @@ public class TaskResponseService {
                 break;
             default:
                 throw new IllegalArgumentException("invalid event type : " + event);
-        }
-    }
-
-    private void operateDqExecuteResult(TaskResponseEvent taskResponseEvent, TaskInstance taskInstance) {
-        if (TaskType.DATA_QUALITY == TaskType.valueOf(taskInstance.getTaskType())) {
-            processService.updateDqExecuteResultUserId(taskResponseEvent.getTaskInstanceId());
-            DqExecuteResult dqExecuteResult =
-                    processService.getDqExecuteResultByTaskInstanceId(taskResponseEvent.getTaskInstanceId());
-            if (dqExecuteResult != null) {
-                //check the result ,if result is failure do some operator by failure strategy
-                checkDqExecuteResult(taskResponseEvent, dqExecuteResult);
-            }
-        }
-    }
-
-    private void checkDqExecuteResult(TaskResponseEvent taskResponseEvent, DqExecuteResult dqExecuteResult) {
-
-        if (isFailure(dqExecuteResult)) {
-            DqFailureStrategy dqFailureStrategy = DqFailureStrategy.of(dqExecuteResult.getFailureStrategy());
-            if (dqFailureStrategy != null) {
-                dqExecuteResult.setState(DqTaskState.FAILURE);
-                switch (dqFailureStrategy) {
-                    case END:
-                        taskResponseEvent.setState(ExecutionStatus.FAILURE);
-                        logger.info("task is failre and end");
-                        break;
-                    case CONTINUE:
-                        logger.info("task is failre and continue");
-                        break;
-                    case END_ALTER:
-                        taskResponseEvent.setState(ExecutionStatus.FAILURE);
-                        sendAlert(dqExecuteResult);
-                        logger.info("task is failre, end and alert");
-                        break;
-                    case CONTINUE_ALTER:
-                        sendAlert(dqExecuteResult);
-                        logger.info("task is failre, continue and alert");
-                        break;
-                    default:
-                        break;
-                }
-            }
-        } else {
-            dqExecuteResult.setState(DqTaskState.SUCCESS);
-        }
-
-        processService.updateDqExecuteResultState(dqExecuteResult);
-    }
-
-    private boolean isFailure(DqExecuteResult dqExecuteResult) {
-        CheckType checkType = dqExecuteResult.getCheckType();
-
-        double statisticsValue = dqExecuteResult.getStatisticsValue();
-        double comparisonValue = dqExecuteResult.getComparisonValue();
-        double threshold = dqExecuteResult.getThreshold();
-
-        OperatorType operatorType = OperatorType.of(dqExecuteResult.getOperator());
-
-        boolean isFailure = false;
-        if (operatorType != null) {
-            if (CheckType.STATISTICS_COMPARE_FIXED_VALUE == checkType) {
-                isFailure = getCompareResult(operatorType,statisticsValue,threshold);
-            } else if (CheckType.STATISTICS_COMPARE_COMPARISON == checkType) {
-                isFailure = getCompareResult(operatorType,comparisonValue - statisticsValue,threshold);
-            } else if (CheckType.STATISTICS_COMPARISON_PERCENTAGE == checkType) {
-                isFailure = getCompareResult(operatorType,statisticsValue / comparisonValue * 100,threshold);
-            }
-        }
-        return isFailure;
-    }
-
-    private void sendAlert(DqExecuteResult dqExecuteResult) {
-        alertManager.
-                sendAlterDataQualityTask(dqExecuteResult,
-                        processService.findProcessInstanceDetailById(
-                                Integer.parseInt(String.valueOf(dqExecuteResult.getProcessInstanceId()))));
-    }
-
-    private static boolean getCompareResult(OperatorType operatorType, double srcValue, double targetValue) {
-        BigDecimal src = BigDecimal.valueOf(srcValue);
-        BigDecimal target = BigDecimal.valueOf(targetValue);
-        switch (operatorType) {
-            case EQ:
-                return src.compareTo(target) == 0;
-            case LT:
-                return src.compareTo(target) <= -1;
-            case LE:
-                return src.compareTo(target) == 0 || src.compareTo(target) <= -1;
-            case GT:
-                return src.compareTo(target) >= 1;
-            case GE:
-                return src.compareTo(target) == 0 || src.compareTo(target) >= 1;
-            case NE:
-                return src.compareTo(target) != 0;
-            default:
-                return true;
         }
     }
 

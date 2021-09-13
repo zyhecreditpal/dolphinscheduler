@@ -20,17 +20,13 @@
 <mapper namespace="org.apache.dolphinscheduler.dao.mapper.DqRuleMapper">
     <select id="queryRuleListPaging" resultType="org.apache.dolphinscheduler.dao.entity.DqRule">
         SELECT a.id, a.name, a.type, b.user_name, a.create_time, a.update_time
-        FROM t_ds_dq_rule a
-        left join t_ds_user b on b.id = a.user_id
+        FROM t_ds_dq_rule a left join t_ds_user b on a.user_id = b.id
         <where>
             <if test=" searchVal != null and searchVal != ''">
                 and a.name like concat('%', #{searchVal}, '%')
             </if>
             <if test="startTime != null ">
                 and a.update_time > #{startTime} and a.update_time <![CDATA[ <=]]> #{endTime}
-            </if>
-            <if test=" userId != 1">
-                and a.user_id = #{userId}
             </if>
             <if test=" ruleType != -1">
                 and a.rule_type = #{ruleType}

@@ -29,25 +29,40 @@ public class DataQualityConfiguration {
     @JsonProperty("name")
     private String name;
 
-    @JsonProperty("connectors")
-    private List<ConnectorParameter> connectorParameters;
+    @JsonProperty("env")
+    private EnvConfig envConfig;
+
+    @JsonProperty("readers")
+    private List<BaseConfig> readerConfigs;
+
+    @JsonProperty("transformers")
+    private List<BaseConfig> transformerConfigs;
 
     @JsonProperty("writers")
-    private List<WriterParameter> writerParams;
-
-    @JsonProperty("executors")
-    private List<ExecutorParameter> executorParameters;
+    private List<BaseConfig> writerConfigs;
 
     public DataQualityConfiguration(){}
 
     public DataQualityConfiguration(String name,
-                                    List<ConnectorParameter> connectorParameters,
-                                    List<WriterParameter> writerParams,
-                                    List<ExecutorParameter> executorParameters) {
+                                    List<BaseConfig> readerConfigs,
+                                    List<BaseConfig> writerConfigs,
+                                    List<BaseConfig> transformerConfigs) {
         this.name = name;
-        this.connectorParameters = connectorParameters;
-        this.writerParams = writerParams;
-        this.executorParameters = executorParameters;
+        this.readerConfigs = readerConfigs;
+        this.writerConfigs = writerConfigs;
+        this.transformerConfigs = transformerConfigs;
+    }
+
+    public DataQualityConfiguration(String name,
+                                    EnvConfig envConfig,
+                                    List<BaseConfig> readerConfigs,
+                                    List<BaseConfig> writerConfigs,
+                                    List<BaseConfig> transformerConfigs) {
+        this.name = name;
+        this.envConfig = envConfig;
+        this.readerConfigs = readerConfigs;
+        this.writerConfigs = writerConfigs;
+        this.transformerConfigs = transformerConfigs;
     }
 
     public String getName() {
@@ -58,28 +73,46 @@ public class DataQualityConfiguration {
         this.name = name;
     }
 
-    public List<ConnectorParameter> getConnectorParameters() {
-        return connectorParameters;
+    public EnvConfig getEnvConfig() {
+        return envConfig;
     }
 
-    public void setConnectorParameters(List<ConnectorParameter> connectorParameters) {
-        this.connectorParameters = connectorParameters;
+    public void setEnvConfig(EnvConfig envConfig) {
+        this.envConfig = envConfig;
     }
 
-    public List<WriterParameter> getWriterParams() {
-        return writerParams;
+    public List<BaseConfig> getReaderConfigs() {
+        return readerConfigs;
     }
 
-    public void setWriterParams(List<WriterParameter> writerParams) {
-        this.writerParams = writerParams;
+    public void setReaderConfigs(List<BaseConfig> readerConfigs) {
+        this.readerConfigs = readerConfigs;
     }
 
-    public List<ExecutorParameter> getExecutorParameters() {
-        return executorParameters;
+    public List<BaseConfig> getTransformerConfigs() {
+        return transformerConfigs;
     }
 
-    public void setExecutorParameters(List<ExecutorParameter> executorParameters) {
-        this.executorParameters = executorParameters;
+    public void setTransformerConfigs(List<BaseConfig> transformerConfigs) {
+        this.transformerConfigs = transformerConfigs;
     }
 
+    public List<BaseConfig> getWriterConfigs() {
+        return writerConfigs;
+    }
+
+    public void setWriterConfigs(List<BaseConfig> writerConfigs) {
+        this.writerConfigs = writerConfigs;
+    }
+
+    @Override
+    public String toString() {
+        return "DataQualityConfiguration{"
+                + "name='" + name + '\''
+                + ", envConfig=" + envConfig
+                + ", readerConfigs=" + readerConfigs
+                + ", transformerConfigs=" + transformerConfigs
+                + ", writerConfigs=" + writerConfigs
+                + '}';
+    }
 }

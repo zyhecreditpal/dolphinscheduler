@@ -24,8 +24,10 @@ import static org.apache.dolphinscheduler.data.quality.Constants.TABLE;
 import static org.apache.dolphinscheduler.data.quality.Constants.URL;
 import static org.apache.dolphinscheduler.data.quality.Constants.USER;
 
-import org.apache.dolphinscheduler.data.quality.configuration.WriterParameter;
+import org.apache.dolphinscheduler.data.quality.config.Config;
 import org.apache.dolphinscheduler.data.quality.flow.FlowTestBase;
+import org.apache.dolphinscheduler.data.quality.flow.batch.reader.JdbcReader;
+import org.apache.dolphinscheduler.data.quality.flow.batch.writer.JdbcWriter;
 
 import java.sql.Connection;
 import java.util.HashMap;
@@ -47,23 +49,27 @@ public class JdbcWriterTest extends FlowTestBase {
 
     @Test
     public void testJdbcWriterExecute() {
-        JdbcWriter jdbcWriter = new JdbcWriter(sparkSession,buildWriterParameter());
-        jdbcWriter.execute();
+        JdbcReader jdbcConnector = new JdbcReader(buildJdbcReaderConfig());
+        JdbcWriter jdbcWriter = new JdbcWriter(buildJdbcConfig());
+        jdbcWriter.write(jdbcConnector.read(sparkRuntimeEnvironment),sparkRuntimeEnvironment);
     }
 
-    private WriterParameter buildWriterParameter() {
-        WriterParameter writerParameter = new WriterParameter();
-        writerParameter.setType("JDBC");
+    private Config buildJdbcConfig() {
         Map<String,Object> config = new HashMap<>();
         config.put(DATABASE,"test");
-        config.put(TABLE,"test2");
+        config.put(TABLE,"test.test2");
         config.put(URL,url);
         config.put(USER,"test");
         config.put(PASSWORD,"123456");
         config.put(DRIVER,driver);
+        config.put("save_mode","append");
+        return new Config(config);
+    }
+
+    private Config buildJdbcReaderConfig() {
+        Config config = buildJdbcConfig();
         config.put("sql","SELECT '1' as company,'1' as date,'2' as c1,'2' as c2,'2' as c3, 2 as c4");
-        writerParameter.setConfig(config);
-        return writerParameter;
+        return config;
     }
 
     private void createWriterTable() {

@@ -38,13 +38,23 @@ public final class Constants {
 
     public static final String DRIVER = "driver";
 
-    public static final String DEFAULT_DRIVER = "com.mysql.jdbc.Driver";
-
-    public static final String DEFAULT_DATABASE = "default";
-
     public static final String EMPTY = "";
 
     public static final String SQL = "sql";
 
     public static final String DOTS = ".";
+
+    public static final String INPUT_TABLE = "input_table";
+
+    public static final String OUTPUT_TABLE = "output_table";
+
+    public static final String TMP_TABLE = "tmp_table";
+
+    public static final String DB_TABLE = "dbtable";
+
+    public static final String JDBC = "jdbc";
+
+    public static final String SAVE_MODE = "save_mode";
+
+    public static final String APPEND = "append";
 }

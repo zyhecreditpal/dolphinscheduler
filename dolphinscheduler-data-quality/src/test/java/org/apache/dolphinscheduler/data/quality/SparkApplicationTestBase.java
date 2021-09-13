@@ -17,8 +17,11 @@
 
 package org.apache.dolphinscheduler.data.quality;
 
-import org.apache.spark.SparkConf;
-import org.apache.spark.sql.SparkSession;
+import org.apache.dolphinscheduler.data.quality.config.Config;
+import org.apache.dolphinscheduler.data.quality.execution.SparkRuntimeEnvironment;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.Before;
 
@@ -27,16 +30,17 @@ import org.junit.Before;
  */
 public class SparkApplicationTestBase {
 
-    protected SparkSession sparkSession;
+    protected SparkRuntimeEnvironment sparkRuntimeEnvironment;
 
     @Before
     public void before() {
-        SparkConf conf = new SparkConf().setAppName("data quality test");
-        conf.set("spark.sql.crossJoin.enabled", "true");
-        conf.set("spark.driver.bindAddress","127.0.0.1");
-        sparkSession = SparkSession.builder()
-                .master("local[4]")
-                .config(conf)
-                .getOrCreate();
+        Map<String,Object> config = new HashMap<>();
+        config.put("spark.app.name","data quality test");
+        config.put("spark.sql.crossJoin.enabled","true");
+        config.put("spark.driver.bindAddress","127.0.0.1");
+        config.put("spark.ui.port",13000);
+        config.put("spark.master","local[4]");
+
+        sparkRuntimeEnvironment = new SparkRuntimeEnvironment(new Config(config));
     }
 }

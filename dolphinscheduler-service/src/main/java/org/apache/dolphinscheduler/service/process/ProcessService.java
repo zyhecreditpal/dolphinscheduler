@@ -53,10 +53,12 @@ import org.apache.dolphinscheduler.common.utils.StringUtils;
 import org.apache.dolphinscheduler.dao.entity.Command;
 import org.apache.dolphinscheduler.dao.entity.CycleDependency;
 import org.apache.dolphinscheduler.dao.entity.DataSource;
+import org.apache.dolphinscheduler.dao.entity.DqComparisonType;
 import org.apache.dolphinscheduler.dao.entity.DqExecuteResult;
 import org.apache.dolphinscheduler.dao.entity.DqRule;
 import org.apache.dolphinscheduler.dao.entity.DqRuleExecuteSql;
 import org.apache.dolphinscheduler.dao.entity.DqRuleInputEntry;
+import org.apache.dolphinscheduler.dao.entity.DqTaskStatisticsValue;
 import org.apache.dolphinscheduler.dao.entity.ErrorCommand;
 import org.apache.dolphinscheduler.dao.entity.ProcessData;
 import org.apache.dolphinscheduler.dao.entity.ProcessDefinition;
@@ -72,10 +74,12 @@ import org.apache.dolphinscheduler.dao.entity.UdfFunc;
 import org.apache.dolphinscheduler.dao.entity.User;
 import org.apache.dolphinscheduler.dao.mapper.CommandMapper;
 import org.apache.dolphinscheduler.dao.mapper.DataSourceMapper;
+import org.apache.dolphinscheduler.dao.mapper.DqComparisonTypeMapper;
 import org.apache.dolphinscheduler.dao.mapper.DqExecuteResultMapper;
 import org.apache.dolphinscheduler.dao.mapper.DqRuleExecuteSqlMapper;
 import org.apache.dolphinscheduler.dao.mapper.DqRuleInputEntryMapper;
 import org.apache.dolphinscheduler.dao.mapper.DqRuleMapper;
+import org.apache.dolphinscheduler.dao.mapper.DqTaskStatisticsValueMapper;
 import org.apache.dolphinscheduler.dao.mapper.ErrorCommandMapper;
 import org.apache.dolphinscheduler.dao.mapper.ProcessDefinitionMapper;
 import org.apache.dolphinscheduler.dao.mapper.ProcessInstanceMapMapper;
@@ -180,6 +184,12 @@ public class ProcessService {
 
     @Autowired
     private DqRuleExecuteSqlMapper dqRuleExecuteSqlMapper;
+
+    @Autowired
+    private DqComparisonTypeMapper dqComparisonTypeMapper;
+
+    @Autowired
+    private DqTaskStatisticsValueMapper dqTaskStatisticsValueMapper;
 
     /**
      * handle Command (construct ProcessInstance from Command) , wrapped in transaction
@@ -1500,12 +1510,13 @@ public class ProcessService {
      * @param host host
      * @param executePath executePath
      * @param logPath logPath
-     * @param taskInstId taskInstId
      */
-    public void changeTaskState(TaskInstance taskInstance, ExecutionStatus state, Date startTime, String host,
+    public void changeTaskState(TaskInstance taskInstance,
+                                ExecutionStatus state,
+                                Date startTime,
+                                String host,
                                 String executePath,
-                                String logPath,
-                                int taskInstId) {
+                                String logPath) {
         taskInstance.setState(state);
         taskInstance.setStartTime(startTime);
         taskInstance.setHost(host);
@@ -1556,14 +1567,12 @@ public class ProcessService {
      *
      * @param state state
      * @param endTime endTime
-     * @param taskInstId taskInstId
      * @param varPool varPool
      */
     public void changeTaskState(TaskInstance taskInstance, ExecutionStatus state,
                                 Date endTime,
                                 int processId,
                                 String appIds,
-                                int taskInstId,
                                 String varPool) {
         taskInstance.setPid(processId);
         taskInstance.setAppLink(appIds);
@@ -2080,7 +2089,7 @@ public class ProcessService {
     }
 
     public DqExecuteResult getDqExecuteResultByTaskInstanceId(int taskInstanceId) {
-        return dqExecuteResultMapper.selectOne(new QueryWrapper<DqExecuteResult>().eq(Constants.TASK_INSTANCE_ID,taskInstanceId));
+        return dqExecuteResultMapper.getExecuteResultById(taskInstanceId);
     }
 
     public int updateDqExecuteResultUserId(int taskInstanceId) {
@@ -2104,6 +2113,18 @@ public class ProcessService {
         return dqExecuteResultMapper.updateById(dqExecuteResult);
     }
 
+    public int deleteDqExecuteResultByTaskInstanceId(int taskInstanceId) {
+        return dqExecuteResultMapper.delete(
+                new QueryWrapper<DqExecuteResult>()
+                        .eq(Constants.TASK_INSTANCE_ID,taskInstanceId));
+    }
+
+    public int deleteTaskStatisticsValueByTaskInstanceId(int taskInstanceId) {
+        return dqTaskStatisticsValueMapper.delete(
+                new QueryWrapper<DqTaskStatisticsValue>()
+                        .eq(Constants.TASK_INSTANCE_ID,taskInstanceId));
+    }
+
     public DqRule getDqRule(int ruleId) {
         return dqRuleMapper.selectById(ruleId);
     }
@@ -2114,5 +2135,9 @@ public class ProcessService {
 
     public List<DqRuleExecuteSql> getDqExecuteSql(int ruleId) {
         return dqRuleExecuteSqlMapper.getExecuteSqlList(ruleId);
+    }
+
+    public DqComparisonType getComparisonTypeById(int id) {
+        return dqComparisonTypeMapper.selectById(id);
     }
 }

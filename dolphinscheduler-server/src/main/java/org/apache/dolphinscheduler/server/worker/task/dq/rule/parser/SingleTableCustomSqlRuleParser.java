@@ -21,12 +21,9 @@ import org.apache.dolphinscheduler.common.exception.DolphinException;
 import org.apache.dolphinscheduler.server.entity.DataQualityTaskExecutionContext;
 import org.apache.dolphinscheduler.server.utils.RuleParserUtils;
 import org.apache.dolphinscheduler.server.worker.task.dq.rule.RuleManager;
-import org.apache.dolphinscheduler.server.worker.task.dq.rule.parameter.ConnectorParameter;
+import org.apache.dolphinscheduler.server.worker.task.dq.rule.parameter.BaseConfig;
 import org.apache.dolphinscheduler.server.worker.task.dq.rule.parameter.DataQualityConfiguration;
-import org.apache.dolphinscheduler.server.worker.task.dq.rule.parameter.ExecutorParameter;
-import org.apache.dolphinscheduler.server.worker.task.dq.rule.parameter.WriterParameter;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -40,29 +37,33 @@ public class SingleTableCustomSqlRuleParser implements IRuleParser {
                                           DataQualityTaskExecutionContext context) throws DolphinException {
         int index = 1;
 
-        List<ConnectorParameter> connectorParameterList =
-                RuleParserUtils.getConnectorParameterList(inputParameterValue,context);
-        List<ExecutorParameter> executorParameterList = new ArrayList<>();
+        List<BaseConfig> readerConfigList =
+                RuleParserUtils.getReaderConfigList(inputParameterValue,context);
+        RuleParserUtils.addStatisticsValueTableReaderConfig(readerConfigList,context);
+
+        List<BaseConfig> transformerConfigList = RuleParserUtils
+                .getSingleTableCustomSqlTransformerConfigList(index,inputParameterValue);
 
         //replace the placeholder in execute sql list
         index = RuleParserUtils.replaceExecuteSqlPlaceholder(
-                                        context.getExecuteSqlList(),
-                                        index,
-                                        inputParameterValue,
-                                        executorParameterList);
+                                    context.getExecuteSqlList(),
+                                    index,
+                                    inputParameterValue,
+                                    transformerConfigList);
 
-        List<WriterParameter> writerParameterList = RuleParserUtils.getWriterParameterList(
-                index,
-                inputParameterValue,
-                executorParameterList,
-                context,
-                RuleManager.SINGLE_TABLE_CUSTOM_SQL_WRITER_SQL
-        );
+        String writerSql = RuleManager.SINGLE_TABLE_CUSTOM_SQL_WRITER_SQL;
+        if (context.isCompareWithFixedValue()) {
+            writerSql = writerSql.replaceAll("join \\$\\{comparison_table}","");
+        }
+
+        List<BaseConfig> writerConfigList = RuleParserUtils.getAllWriterConfigList(inputParameterValue,
+                context, index, transformerConfigList, writerSql,RuleManager.TASK_STATISTICS_VALUE_WRITER_SQL);
 
         return new DataQualityConfiguration(
                 context.getRuleName(),
-                connectorParameterList,
-                writerParameterList,
-                executorParameterList);
+                RuleParserUtils.getEnvConfig(),
+                readerConfigList,
+                writerConfigList,
+                transformerConfigList);
     }
 }

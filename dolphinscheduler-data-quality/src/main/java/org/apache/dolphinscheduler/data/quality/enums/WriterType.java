@@ -24,7 +24,9 @@ public enum WriterType {
     /**
      * JDBC
      */
-    JDBC;
+    JDBC,
+    LOCAL_FILE,
+    HDFS_FILE;
 
     public static WriterType getType(String name) {
         for (WriterType type: WriterType.values()) {

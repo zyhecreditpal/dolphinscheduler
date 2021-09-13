@@ -207,8 +207,21 @@
             this.fApi.on('target_datasource_id-change', this.targetDatasourceIdChange)
             this.fApi.on('src_table-change', this.srcTableChange)
             this.fApi.on('target_table-change', this.targetTableChange)
+            this.fApi.on('comparison_type-change', this.comparisonTypeChange)
           })
         })
+      },
+
+      comparisonTypeChange () {
+        if (this.fApi.getValue('comparison_type') === 1) {
+          this.fApi.append(this.getComparisonNameInput(), 'comparison_type')
+        } else {
+          this.fApi.removeField('comparison_name')
+        }
+      },
+
+      getComparisonNameInput () {
+        return this.$formCreate.maker.input('固定值', 'comparison_name', this.inputEntryValueMap.comparison_name)
       },
 
       srcConnectorTypeChange () {
@@ -307,7 +320,7 @@
       /**
        * Get rule list
        */
-      _getRuluList () {
+      _getRuleList () {
         return new Promise((resolve, reject) => {
           this.store.dispatch('dag/getRuleList', 1).then(res => {
             this.ruleNameList = []
@@ -324,61 +337,76 @@
             } else {
               this._getRuluInputEntryList(this.ruleId)
               window.setTimeout(() => {
-                let fields = this.fApi.fields()
-                fields.forEach(item => {
-                  if (this.inputEntryValueMap[item] !== null) {
-                    this._updateSelectFieldOptions(
-                      'dag/getDatasourceOptionsById',
-                      item, 'src_connector_type',
-                      this.inputEntryValueMap[item],
-                      'src_datasource_id', [])
-
-                    this._updateSelectFieldOptions(
-                      'dag/getDatasourceOptionsById',
-                      item, 'target_connector_type',
-                      this.inputEntryValueMap[item],
-                      'target_datasource_id', [])
-
-                    this._updateSelectFieldOptions(
-                      'dag/getDatasourceOptionsById',
-                      item, 'writer_connector_type',
-                      this.inputEntryValueMap[item],
-                      'writer_datasource_id', [])
-
-                    this._updateSelectFieldOptions(
-                      'dag/getTablesById',
-                      item, 'src_datasource_id',
-                      { datasourceId: this.inputEntryValueMap[item] },
-                      'src_table', [])
-
-                    this._updateSelectFieldOptions(
-                      'dag/getTablesById',
-                      item, 'target_datasource_id',
-                      { datasourceId: this.inputEntryValueMap[item] },
-                      'target_table', [])
-
-                    this._updateSelectFieldOptions(
-                      'dag/getTableColumsByIdAndName',
-                      item, 'target_table',
-                      { datasourceId: this.inputEntryValueMap.target_datasource_id, tableName: this.inputEntryValueMap[item] },
-                      'target_field', [])
-
-                    this._updateSelectFieldOptions(
-                      'dag/getTableColumsByIdAndName',
-                      item, 'src_table',
-                      { datasourceId: this.inputEntryValueMap.src_datasource_id, tableName: this.inputEntryValueMap[item] },
-                      'src_field', [])
-
-                    this.fApi.setValue(item, this.inputEntryValueMap[item])
-                  }
-
-                  if (this.isDetails) {
-                    this.fApi.disabled(true, item)
-                  }
-                })
+                this._operateFields()
               }, 1000)
             }
           })
+        })
+      },
+
+      /**
+       * operate fields
+       */
+      _operateFields () {
+        let fields = this.fApi.fields()
+        fields.forEach(item => {
+          if (this.inputEntryValueMap[item] !== null) {
+            this._updateSelectFieldOptions(
+              'dag/getDatasourceOptionsById',
+              item, 'src_connector_type',
+              this.inputEntryValueMap[item],
+              'src_datasource_id', [])
+
+            this._updateSelectFieldOptions(
+              'dag/getDatasourceOptionsById',
+              item, 'target_connector_type',
+              this.inputEntryValueMap[item],
+              'target_datasource_id', [])
+
+            this._updateSelectFieldOptions(
+              'dag/getDatasourceOptionsById',
+              item, 'writer_connector_type',
+              this.inputEntryValueMap[item],
+              'writer_datasource_id', [])
+
+            this._updateSelectFieldOptions(
+              'dag/getTablesById',
+              item, 'src_datasource_id',
+              { datasourceId: this.inputEntryValueMap[item] },
+              'src_table', [])
+
+            this._updateSelectFieldOptions(
+              'dag/getTablesById',
+              item, 'target_datasource_id',
+              { datasourceId: this.inputEntryValueMap[item] },
+              'target_table', [])
+
+            this._updateSelectFieldOptions(
+              'dag/getTableColumsByIdAndName',
+              item, 'target_table',
+              { datasourceId: this.inputEntryValueMap.target_datasource_id, tableName: this.inputEntryValueMap[item] },
+              'target_field', [])
+
+            this._updateSelectFieldOptions(
+              'dag/getTableColumsByIdAndName',
+              item, 'src_table',
+              { datasourceId: this.inputEntryValueMap.src_datasource_id, tableName: this.inputEntryValueMap[item] },
+              'src_field', [])
+
+            if (item === 'comparison_type') {
+              if (this.inputEntryValueMap.comparison_type === 1) {
+                this.fApi.append(this.getComparisonNameInput(), 'comparison_type')
+              } else {
+                this.fApi.removeField('comparison_name')
+              }
+            }
+
+            this.fApi.setValue(item, this.inputEntryValueMap[item])
+          }
+
+          if (this.isDetails) {
+            this.fApi.disabled(true, item)
+          }
         })
       },
 
@@ -538,7 +566,7 @@
     },
 
     mounted () {
-      this._getRuluList()
+      this._getRuleList()
     },
 
     components: {
