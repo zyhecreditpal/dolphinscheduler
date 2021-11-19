@@ -67,6 +67,7 @@
         <jackson.version>2.9.10</jackson.version>
         <mybatis-plus.version>3.2.0</mybatis-plus.version>
         <mybatis.spring.version>2.0.1</mybatis.spring.version>
+        <velocity.version>2.3.28</velocity.version>
         <cron.utils.version>5.0.5</cron.utils.version>
         <fastjson.version>1.2.75</fastjson.version>
         <druid.version>1.1.14</druid.version>
@@ -132,6 +133,17 @@
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus</artifactId>
                 <version>${mybatis-plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-generator</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.freemarker</groupId>
+                <artifactId>freemarker</artifactId>
+                <version>${velocity.version}</version>
             </dependency>
             <!-- quartz-->
             <dependency>
@@ -351,7 +363,7 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.connector.version}</version>
-                <scope>test</scope>
+                <scope>compile</scope>
             </dependency>
             <dependency>
                 <groupId>com.h2database</groupId>
