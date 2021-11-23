@@ -16,6 +16,6 @@ import java.util.List;
  */
 public interface TableRelationMapper extends BaseMapper<Lineage> {
 
-    List<Lineage> queryTableRelationList(@Param("tableName") String tableName);
+    List<Lineage> queryTableRelationList(@Param("column") String column, @Param("tableName") String tableName);
 
 }
