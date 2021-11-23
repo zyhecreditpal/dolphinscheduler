@@ -509,7 +509,28 @@ const router = new Router({
           }
         }
       ]
-    }
+    },
+    {
+      path: '/administrator',
+      name: 'administrator',
+      component: resolve => require(['../pages/administrator/index'], resolve),
+      meta: {
+        title: `${i18n.$t('Administrator')}`
+      },
+      redirect: {
+        name: 'administrator-list'
+      },
+      children: [
+        {
+          path: '/administrator/list',
+          name: 'administrator-list',
+          component: resolve => require(['../pages/administrator/pages/list/index'], resolve),
+          meta: {
+            title: `${i18n.$t('Administrator')}`
+          }
+        }
+      ]
+    },
   ]
 })
 

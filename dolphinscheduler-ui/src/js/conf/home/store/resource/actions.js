@@ -21,6 +21,24 @@ export default {
   /**
    * Get a list of udf files
    */
+   gettables ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.get('tables/list-paging', payload, res => {
+        resolve(res.data)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
+  getrelation ({ state }, payload) {
+    return new Promise((resolve, reject) => {
+      io.get('tables/list-relation', payload, res => {
+        resolve(res.data)
+      }).catch(e => {
+        reject(e)
+      })
+    })
+  },
   getResourcesListP ({ state }, payload) {
     return new Promise((resolve, reject) => {
       io.get('resources/list-paging', payload, res => {

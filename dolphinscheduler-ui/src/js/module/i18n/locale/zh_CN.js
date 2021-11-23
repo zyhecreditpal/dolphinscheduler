@@ -362,6 +362,7 @@ export default {
   'Please select the file to upload': '请选择要上传的文件',
   'Resources manage': '资源中心',
   Security: '安全中心',
+  Administrator: '管理员',
   Logout: '退出',
   'No data': '查询无数据',
   'Uploading...': '文件上传中',
