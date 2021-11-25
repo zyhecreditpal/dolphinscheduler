@@ -54,6 +54,8 @@ public class DataSourceFactory {
           return JSONUtils.parseObject(parameter, SQLServerDataSource.class);
         case DB2:
           return JSONUtils.parseObject(parameter, DB2ServerDataSource.class);
+        case IMPALA:
+          return JSONUtils.parseObject(parameter, DB2ServerDataSource.class);
         default:
           return null;
       }
@@ -93,6 +95,8 @@ public class DataSourceFactory {
         break;
       case DB2:
         Class.forName(Constants.COM_DB2_JDBC_DRIVER);
+      case IMPALA:
+        Class.forName(Constants.COM_IMPALA_JDBC_DRIVER);
         break;
       default:
         logger.error("not support sql type: {},can't load class", dbType);

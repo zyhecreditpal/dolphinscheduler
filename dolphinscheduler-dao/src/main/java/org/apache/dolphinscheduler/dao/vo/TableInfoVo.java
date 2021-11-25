@@ -1,7 +1,7 @@
 package org.apache.dolphinscheduler.dao.vo;
 
-public class TableInfoVo {
 
+public class TableInfoVo {
     private String tableName;
 
     public String getTableName() {

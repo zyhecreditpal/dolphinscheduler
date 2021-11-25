@@ -187,6 +187,7 @@ public enum Status {
     QUERY_WORKER_ADDRESS_LIST_FAIL(10178, "query worker address list fail ", "查询worker地址列表失败"),
     QUERY_TABLE_LIST_PAGING_ERROR(10179,"query table list paging error", "分页查询表格列表错误"),
     QUERY_TABLE_RELATION_ERROR(10180,"query table relation error", "查询表格关系错误"),
+    DOWNEXCEL_ERROR(10181,"down excel error", "excel下载失败"),
 
     UDF_FUNCTION_NOT_EXIST(20001, "UDF function not found", "UDF函数不存在"),
     UDF_FUNCTION_EXISTS(20002, "UDF function already exists", "UDF函数已存在"),

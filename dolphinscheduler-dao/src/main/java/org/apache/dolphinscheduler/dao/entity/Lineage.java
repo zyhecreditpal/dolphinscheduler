@@ -6,6 +6,7 @@ import com.mysql.jdbc.StringUtils;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.util.Objects;
 
 /**
  * <p>
@@ -58,7 +59,9 @@ public class Lineage implements Serializable {
 
     public String getSourceVertex() {
         try {
-            return StringUtils.toString(sourceVertex,"UTF-8");
+            if (Objects.nonNull(sourceVertex)){
+                return StringUtils.toString(sourceVertex,"UTF-8");
+            }
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -79,7 +82,9 @@ public class Lineage implements Serializable {
 
     public String getTargetVertex() {
         try {
-            return StringUtils.toString(targetVertex,"UTF-8");
+            if (Objects.nonNull(targetVertex)){
+                return StringUtils.toString(targetVertex,"UTF-8");
+            }
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }

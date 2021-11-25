@@ -473,6 +473,14 @@ public final class Constants {
 
     public static final String SPRING_DATASOURCE_PASSWORD = "spring.datasource.password";
 
+    public static final String SPRING_IMPALA_DATASOURCE_DRIVER_CLASS_NAME = "spring.datasource.impala.driver-class-name";
+
+    public static final String SPRING_IMPALA_DATASOURCE_URL = "spring.datasource.impala.url";
+
+    public static final String SPRING_IMPALA_DATASOURCE_USERNAME = "spring.datasource.impala.username";
+
+    public static final String SPRING_IMPALA_DATASOURCE_PASSWORD = "spring.datasource.impala.password";
+
     public static final String SPRING_DATASOURCE_VALIDATION_QUERY_TIMEOUT = "spring.datasource.validationQueryTimeout";
 
     public static final String SPRING_DATASOURCE_INITIAL_SIZE = "spring.datasource.initialSize";
@@ -903,6 +911,8 @@ public final class Constants {
     public static final String COM_ORACLE_JDBC_DRIVER = "oracle.jdbc.driver.OracleDriver";
     public static final String COM_SQLSERVER_JDBC_DRIVER = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
     public static final String COM_DB2_JDBC_DRIVER = "com.ibm.db2.jcc.DB2Driver";
+    public static final String COM_IMPALA_JDBC_DRIVER = "com.cloudera.impala.jdbc41.Driver";
+
 
     /**
      * database type

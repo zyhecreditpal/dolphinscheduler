@@ -83,8 +83,10 @@ public class ConnectionFactory extends SpringConnectionFactory {
      */
     private DataSource buildDataSource() {
 
-        DruidDataSource druidDataSource = dataSource();
-        return druidDataSource;
+//        DataSource druidDataSource = SpringUtils.getBean("masterDataSource");
+//        DruidDataSource druidDataSource = dataSource();
+//        return druidDataSource;
+        return masterDataSource();
     }
 
     /**

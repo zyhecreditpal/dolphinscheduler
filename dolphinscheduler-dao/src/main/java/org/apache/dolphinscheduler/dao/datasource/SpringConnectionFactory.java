@@ -22,10 +22,10 @@ import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.config.GlobalConfig;
 import com.baomidou.mybatisplus.extension.plugins.PaginationInterceptor;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.dolphinscheduler.common.Constants;
+import org.apache.dolphinscheduler.dao.datasource.aop.DataSourceType;
 import org.apache.dolphinscheduler.dao.utils.PropertyUtils;
+import org.apache.dolphinscheduler.dao.utils.SpringUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.type.JdbcType;
@@ -35,9 +35,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+
+import javax.sql.DataSource;
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -50,22 +55,10 @@ public class SpringConnectionFactory {
     private static final Logger logger = LoggerFactory.getLogger(SpringConnectionFactory.class);
 
 
-    /**
-     *  pagination interceptor
-     * @return pagination interceptor
-     */
-    @Bean
-    public PaginationInterceptor paginationInterceptor() {
-        return new PaginationInterceptor();
-    }
 
-    /**
-     * get the data source
-     * @return druid dataSource
-     */
-    @Bean(destroyMethod="")
-    public DruidDataSource dataSource() {
-
+    @Bean(name = "masterDataSource")
+    public DataSource masterDataSource()
+    {
         DruidDataSource druidDataSource = new DruidDataSource();
 
         druidDataSource.setDriverClassName(PropertyUtils.getString(Constants.SPRING_DATASOURCE_DRIVER_CLASS_NAME));
@@ -95,12 +88,49 @@ public class SpringConnectionFactory {
     }
 
     /**
+     *  pagination interceptor
+     * @return pagination interceptor
+     */
+    @Bean
+    public PaginationInterceptor paginationInterceptor() {
+        return new PaginationInterceptor();
+    }
+
+    @Bean(name = "slaveDataSource")
+    public DataSource slaveDataSource()
+    {
+        DruidDataSource druidDataSource = new DruidDataSource();
+
+        druidDataSource.setDriverClassName(PropertyUtils.getString(Constants.SPRING_IMPALA_DATASOURCE_DRIVER_CLASS_NAME));
+        druidDataSource.setUrl(PropertyUtils.getString(Constants.SPRING_IMPALA_DATASOURCE_URL));
+        druidDataSource.setUsername(PropertyUtils.getString(Constants.SPRING_IMPALA_DATASOURCE_USERNAME));
+        druidDataSource.setPassword(PropertyUtils.getString(Constants.SPRING_IMPALA_DATASOURCE_PASSWORD));
+        druidDataSource.setValidationQuery(PropertyUtils.getString(Constants.SPRING_DATASOURCE_VALIDATION_QUERY,"SELECT 1"));
+
+        druidDataSource.setTestWhileIdle(PropertyUtils.getBoolean(Constants.SPRING_DATASOURCE_TEST_WHILE_IDLE,true));
+        druidDataSource.setTestOnBorrow(PropertyUtils.getBoolean(Constants.SPRING_DATASOURCE_TEST_ON_BORROW,false));
+        druidDataSource.setTestOnReturn(PropertyUtils.getBoolean(Constants.SPRING_DATASOURCE_TEST_ON_RETURN,false));
+
+        druidDataSource.setMinIdle(PropertyUtils.getInt(Constants.SPRING_DATASOURCE_MIN_IDLE,5));
+        druidDataSource.setMaxActive(PropertyUtils.getInt(Constants.SPRING_DATASOURCE_MAX_ACTIVE,50));
+        druidDataSource.setMaxWait(PropertyUtils.getInt(Constants.SPRING_DATASOURCE_MAX_WAIT,60000));
+        druidDataSource.setInitialSize(PropertyUtils.getInt(Constants.SPRING_DATASOURCE_INITIAL_SIZE,5));
+        druidDataSource.setTimeBetweenEvictionRunsMillis(PropertyUtils.getLong(Constants.SPRING_DATASOURCE_TIME_BETWEEN_EVICTION_RUNS_MILLIS,60000));
+        druidDataSource.setTimeBetweenConnectErrorMillis(PropertyUtils.getLong(Constants.SPRING_DATASOURCE_TIME_BETWEEN_CONNECT_ERROR_MILLIS,60000));
+        druidDataSource.setMinEvictableIdleTimeMillis(PropertyUtils.getLong(Constants.SPRING_DATASOURCE_MIN_EVICTABLE_IDLE_TIME_MILLIS,300000));
+        druidDataSource.setValidationQueryTimeout(PropertyUtils.getInt(Constants.SPRING_DATASOURCE_VALIDATION_QUERY_TIMEOUT,3));
+        //auto commit
+        druidDataSource.setDefaultAutoCommit(PropertyUtils.getBoolean(Constants.SPRING_DATASOURCE_DEFAULT_AUTO_COMMIT,true));
+        return druidDataSource;
+    }
+
+    /**
      * * get transaction manager
      * @return DataSourceTransactionManager
      */
     @Bean
     public DataSourceTransactionManager transactionManager() {
-        return new DataSourceTransactionManager(dataSource());
+        return new DataSourceTransactionManager(dynamicDataSource());
     }
 
     /**
@@ -118,7 +148,9 @@ public class SpringConnectionFactory {
         configuration.addInterceptor(paginationInterceptor());
         MybatisSqlSessionFactoryBean sqlSessionFactoryBean = new MybatisSqlSessionFactoryBean();
         sqlSessionFactoryBean.setConfiguration(configuration);
-        sqlSessionFactoryBean.setDataSource(dataSource());
+        sqlSessionFactoryBean.setDataSource(dynamicDataSource());
+//            sqlSessionFactoryBean.setDataSource(dataSource);
+
 
         GlobalConfig.DbConfig dbConfig = new GlobalConfig.DbConfig();
         dbConfig.setIdType(IdType.AUTO);
@@ -140,6 +172,35 @@ public class SpringConnectionFactory {
     @Bean
     public SqlSession sqlSession() throws Exception{
         return new SqlSessionTemplate(sqlSessionFactory());
+    }
+
+    @Bean(name = "dynamicDataSource")
+    @Primary
+    public DynamicDataSource dynamicDataSource()
+    {
+        Map<Object, Object> targetDataSources = new HashMap<>();
+        targetDataSources.put(DataSourceType.MASTER.name(), masterDataSource());
+        setDataSource(targetDataSources, DataSourceType.SLAVE.name(), "slaveDataSource");
+        return new DynamicDataSource(masterDataSource(), targetDataSources);
+    }
+
+    /**
+     * 设置数据源
+     *
+     * @param targetDataSources 备选数据源集合
+     * @param sourceName 数据源名称
+     * @param beanName bean名称
+     */
+    public void setDataSource(Map<Object, Object> targetDataSources, String sourceName, String beanName)
+    {
+        try
+        {
+            DataSource dataSource = SpringUtils.getBean(beanName);
+            targetDataSources.put(sourceName, dataSource);
+        }
+        catch (Exception e)
+        {
+        }
     }
 
 }

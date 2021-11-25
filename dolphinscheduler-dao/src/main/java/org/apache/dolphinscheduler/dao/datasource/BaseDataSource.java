@@ -137,6 +137,7 @@ public abstract class BaseDataSource {
           separator = "?";
           break;
         case DB2:
+        case IMPALA:
           separator = ":";
           break;
         case HIVE:
