@@ -17,6 +17,7 @@
 package org.apache.dolphinscheduler.service.quartz;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import org.apache.dolphinscheduler.dao.utils.SpringUtils;
 import org.apache.dolphinscheduler.service.bean.SpringApplicationContext;
 import org.quartz.utils.ConnectionProvider;
 
@@ -31,7 +32,8 @@ public class DruidConnectionProvider implements ConnectionProvider {
     private final DruidDataSource dataSource;
 
     public DruidConnectionProvider(){
-        this.dataSource = SpringApplicationContext.getBean(DruidDataSource.class);
+        this.dataSource = SpringUtils.getBean("masterDataSource");
+//        this.dataSource = SpringApplicationContext.getBean(DruidDataSource.class);
     }
 
     @Override

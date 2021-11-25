@@ -122,45 +122,47 @@ public class TableInfoController extends BaseController {
         List<Map<String,String>> targetExcelMap = (List<Map<String, String>>) ((HashMap)result.get("data")).get("targetExcel");
 
         int length = sourceExcelMap.size()>=targetExcelMap.size()?sourceExcelMap.size():targetExcelMap.size();
-//
-        List<Lineage> downList = new ArrayList<>(length);
-        for (int i = 0; i < length; i++) {
-            Lineage lineage = new Lineage();
-            if (i < sourceExcelMap.size()){
-                lineage.setSourceTable(sourceExcelMap.get(i).get("sourceTable"));
-                lineage.setSourceVertex(sourceExcelMap.get(i).get("sourceTableField").getBytes(StandardCharsets.UTF_8));
-            }else {
-                lineage.setSourceTable("");
-                lineage.setSourceVertex("".getBytes(StandardCharsets.UTF_8));
+        logger.info("可下载文件行数 {}",length);
+        if (length > 0) {
+            List<Lineage> downList = new ArrayList<>(length);
+            for (int i = 0; i < length; i++) {
+                Lineage lineage = new Lineage();
+                if (i < sourceExcelMap.size()) {
+                    lineage.setSourceTable(sourceExcelMap.get(i).get("sourceTable"));
+                    lineage.setSourceVertex(sourceExcelMap.get(i).get("sourceTableField").getBytes(StandardCharsets.UTF_8));
+                } else {
+                    lineage.setSourceTable("");
+                    lineage.setSourceVertex("".getBytes(StandardCharsets.UTF_8));
+                }
+
+                if (i < targetExcelMap.size()) {
+                    lineage.setTargetTable(targetExcelMap.get(i).get("targetTable"));
+                    lineage.setTargetVertex(targetExcelMap.get(i).get("targetTableField").getBytes(StandardCharsets.UTF_8));
+                } else {
+                    lineage.setTargetTable("");
+                    lineage.setTargetVertex("".getBytes(StandardCharsets.UTF_8));
+                }
+                downList.add(lineage);
             }
 
-            if (i < targetExcelMap.size()){
-                lineage.setTargetTable(targetExcelMap.get(i).get("targetTable"));
-                lineage.setTargetVertex(targetExcelMap.get(i).get("targetTableField").getBytes(StandardCharsets.UTF_8));
-            }else {
-                lineage.setTargetTable("");
-                lineage.setTargetVertex("".getBytes(StandardCharsets.UTF_8));
-            }
-            downList.add(lineage);
+            response.setContentType("application/vnd.ms-excel;charset=utf-8");
+            response.setCharacterEncoding("utf-8");
+            String fileName = URLEncoder.encode(UUID.fastUUID().toString(true), "UTF-8");
+            response.setHeader("Content-disposition", "attachment;filename=" + fileName + ".xlsx");
+            ExcelWriter writer = ExcelUtil.getWriter();
+            ServletOutputStream outputStream = response.getOutputStream();
+
+            writer.addHeaderAlias("sourceTable", "来源表");
+            writer.addHeaderAlias("sourceVertex", "来源字段");
+            writer.addHeaderAlias("targetTable", "目标表");
+            writer.addHeaderAlias("targetVertex", "目标字段");
+
+            writer.setOnlyAlias(true);
+            writer.write(downList, true);
+            writer.flush(outputStream, true);
+            writer.close();
+            IoUtil.close(outputStream);
         }
-
-        response.setContentType("application/vnd.ms-excel;charset=utf-8");
-        response.setCharacterEncoding("utf-8");
-        String fileName = URLEncoder.encode(UUID.fastUUID().toString(true), "UTF-8");
-        response.setHeader("Content-disposition", "attachment;filename=" + fileName + ".xlsx");
-        ExcelWriter writer = ExcelUtil.getWriter();
-        ServletOutputStream outputStream = response.getOutputStream();
-
-        writer.addHeaderAlias("sourceTable", "来源表");
-        writer.addHeaderAlias("sourceVertex", "来源字段");
-        writer.addHeaderAlias("targetTable", "目标表");
-        writer.addHeaderAlias("targetVertex", "目标字段");
-
-        writer.setOnlyAlias(true);
-        writer.write(downList,true);
-        writer.flush(outputStream,true);
-        writer.close();
-        IoUtil.close(outputStream);
     }
 
 }

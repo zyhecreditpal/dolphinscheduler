@@ -82,7 +82,11 @@ public class TableRelationService extends BaseService {
                             String value = (String) field.getValue();
                             Map<String, String> source = new HashMap<>();
                             source.put("sourceTable", sourceTableName);
-                            source.put("sourceTableField", key + "(" + value + ")");
+                            if (StringUtils.hasText(value)){
+                                source.put("sourceTableField", key + "(" + value + ")");
+                            }else{
+                                source.put("sourceTableField", key);
+                            }
                             sourceExcelMap.add(source);
                         }
                     }
@@ -103,7 +107,11 @@ public class TableRelationService extends BaseService {
                             String value = (String) field.getValue();
                             Map<String, String> source = new HashMap<>();
                             source.put("targetTable", targetTableName);
-                            source.put("targetTableField", key + "(" + value + ")");
+                            if (StringUtils.hasText(value)){
+                                source.put("targetTableField", key + "(" + value + ")");
+                            }else {
+                                source.put("targetTableField", key);
+                            }
                             targetExcelMap.add(source);
                         }
                     }
