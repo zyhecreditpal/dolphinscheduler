@@ -4,6 +4,6 @@
 
     <select id="queryTableRelationList" resultType="org.apache.dolphinscheduler.dao.entity.Lineage">
         select * from lineage
-        where ${column} =#{tableName}
+        where ${column} like concat('%', #{tableName})
     </select>
 </mapper>
