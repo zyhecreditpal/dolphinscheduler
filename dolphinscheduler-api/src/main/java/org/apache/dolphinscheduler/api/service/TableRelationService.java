@@ -22,7 +22,7 @@ import java.util.Map;
 
 /**
  * <p>
- *  服务实现类
+ * 服务实现类
  * </p>
  *
  * @author zyh
@@ -43,33 +43,33 @@ public class TableRelationService extends BaseService {
      * @param loginUser login user
      * @return tableRelation list
      */
-    public Map<String, Object> queryRelationList(User loginUser,String tableName) {
+    public Map<String, Object> queryRelationList(User loginUser, String tableName) {
         Map<String, Object> result = new HashMap<>(5);
-        Map<String,Object> data = new HashMap<>(5);
+        Map<String, Object> data = new HashMap<>(5);
         List<Lineage> excelLineage = new ArrayList<>(16);
         //右树
         TableTreeInfoVo rely = new TableTreeInfoVo();
         //左树
         TableTreeInfoVo reliedOn = new TableTreeInfoVo();
 
-        queryRelyTree("target_table",tableName,rely,excelLineage);
-        queryRelyTree("source_table",tableName,reliedOn,excelLineage);
+        queryRelyTree("target_table", tableName, rely, excelLineage);
+        queryRelyTree("source_table", tableName, reliedOn, excelLineage);
 
         Map<String, String> sourceMap = new HashMap<>();
         Map<String, String> targetMap = new HashMap<>();
 
-        List<Map<String,String>> sourceExcelMap = new ArrayList<>();
-        List<Map<String,String>> targetExcelMap = new ArrayList<>();
-        if (!CollectionUtils.isEmpty(excelLineage)){
+        List<Map<String, String>> sourceExcelMap = new ArrayList<>();
+        List<Map<String, String>> targetExcelMap = new ArrayList<>();
+        if (!CollectionUtils.isEmpty(excelLineage)) {
             for (Lineage lineage : excelLineage) {
-                sourceMap.put(lineage.getSourceTable(),lineage.getSourceVertex());
+                sourceMap.put(lineage.getSourceTable(), lineage.getSourceVertex());
                 targetMap.put(lineage.getTargetTable(), lineage.getTargetVertex());
             }
 
         }
 
         //excel 字段处理
-        if (!CollectionUtils.isEmpty(sourceMap)){
+        if (!CollectionUtils.isEmpty(sourceMap)) {
             for (Map.Entry<String, String> entry : sourceMap.entrySet()) {
                 String sourceTableName = entry.getKey();
                 String sourceTableFields = entry.getValue();
@@ -82,9 +82,9 @@ public class TableRelationService extends BaseService {
                             String value = (String) field.getValue();
                             Map<String, String> source = new HashMap<>();
                             source.put("sourceTable", sourceTableName);
-                            if (StringUtils.hasText(value)){
+                            if (StringUtils.hasText(value)) {
                                 source.put("sourceTableField", key + "(" + value + ")");
-                            }else{
+                            } else {
                                 source.put("sourceTableField", key);
                             }
                             sourceExcelMap.add(source);
@@ -94,7 +94,7 @@ public class TableRelationService extends BaseService {
             }
         }
 
-        if (!CollectionUtils.isEmpty(targetMap)){
+        if (!CollectionUtils.isEmpty(targetMap)) {
             for (Map.Entry<String, String> entry : targetMap.entrySet()) {
                 String targetTableName = entry.getKey();
                 String targetTableFields = entry.getValue();
@@ -107,9 +107,9 @@ public class TableRelationService extends BaseService {
                             String value = (String) field.getValue();
                             Map<String, String> source = new HashMap<>();
                             source.put("targetTable", targetTableName);
-                            if (StringUtils.hasText(value)){
+                            if (StringUtils.hasText(value)) {
                                 source.put("targetTableField", key + "(" + value + ")");
-                            }else {
+                            } else {
                                 source.put("targetTableField", key);
                             }
                             targetExcelMap.add(source);
@@ -119,27 +119,27 @@ public class TableRelationService extends BaseService {
             }
         }
 
-        data.put("sourceExcel",sourceExcelMap);
-        data.put("targetExcel",targetExcelMap);
-        data.put("right",rely);
-        data.put("left",reliedOn);
+        data.put("sourceExcel", sourceExcelMap);
+        data.put("targetExcel", targetExcelMap);
+        data.put("right", rely);
+        data.put("left", reliedOn);
         result.put(Constants.DATA_LIST, data);
         putMsg(result, Status.SUCCESS);
         return result;
     }
 
-    private TableTreeInfoVo queryRelyTree(String column, String tableName, TableTreeInfoVo vo,List<Lineage> excelLineage){
-        List<Lineage> lineageList = tableRelationMapper.queryTableRelationList(column,tableName);
-        if (!CollectionUtils.isEmpty(lineageList)){
+    private TableTreeInfoVo queryRelyTree(String column, String tableName, TableTreeInfoVo vo, List<Lineage> excelLineage) {
+        List<Lineage> lineageList = tableRelationMapper.queryTableRelationList(column, tableName);
+        if (!CollectionUtils.isEmpty(lineageList)) {
 
             //查询表 comment 并重新命名
-            tableInfoService.listLine(lineageList,column);
+            tableInfoService.listLine(lineageList, column);
             List<TableTreeInfoVo> next = new ArrayList<>(lineageList.size());
             for (Lineage lineage : lineageList) {
                 TableTreeInfoVo infoVo = new TableTreeInfoVo();
-                if ("source_table".equals(column)){
+                if ("source_table".equals(column)) {
                     infoVo.setLabel(lineage.getTargetTable());
-                }else {
+                } else {
                     infoVo.setLabel(lineage.getSourceTable());
                 }
                 next.add(infoVo);

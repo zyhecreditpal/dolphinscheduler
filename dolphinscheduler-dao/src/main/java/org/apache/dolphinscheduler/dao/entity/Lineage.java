@@ -49,6 +49,12 @@ public class Lineage implements Serializable {
     @TableField("create_time")
     private Integer createTime;
 
+    @TableField(exist = false)
+    private String targetTableField;
+
+    @TableField(exist = false)
+    private String sourceTableField;
+
     public String getSourceTable() {
         return sourceTable;
     }
@@ -101,5 +107,21 @@ public class Lineage implements Serializable {
 
     public void setCreateTime(Integer createTime) {
         this.createTime = createTime;
+    }
+
+    public String getTargetTableField() {
+        return targetTableField;
+    }
+
+    public void setTargetTableField(String targetTableField) {
+        this.targetTableField = targetTableField;
+    }
+
+    public String getSourceTableField() {
+        return sourceTableField;
+    }
+
+    public void setSourceTableField(String sourceTableField) {
+        this.sourceTableField = sourceTableField;
     }
 }
