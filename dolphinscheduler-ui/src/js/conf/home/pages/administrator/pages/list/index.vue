@@ -31,11 +31,12 @@
                 </li>
                 <li class="table-li" v-for="item in totalList" :key="item" @click="getItemtree(item.tableName)">
                   {{item.tableName}}</li>
-                <div class="page-box" style="padding:10px;" v-if="totalList">
+                <!-- 页脚 -->
+                <!-- <div class="page-box" style="padding:10px;" v-if="totalList">
                   <x-page show-total small :current="parseInt(searchParams.pageNo)" :total="total"
                     :page-size="searchParams.pageSize" @on-change="_page" show-sizer :page-size-options="[10,20,30,50]"
                     @on-size-change="_pageSize"></x-page>
-                </div>
+                </div> -->
               </ul>
             </m-process-state-count>
           </div>
@@ -50,11 +51,15 @@
             </div>
           </div>
           <div class="col-md-3 card">
-            <div class="chart-title">
-              <span>统计表</span>
+            <div class="chart-title" style="display: flex; justify-content: center; align-items: center;">
+              <span v-if="val">统计表({{this.val}})</span>
+              <span v-else>统计表</span>
+              <x-button style="margin-left:5px" v-if="tableData.length>0" data-toggle="tooltip" shape="circle"
+                size="xsmall" type="info" @click="_export" :title="$t('Download')" icon="ans-icon-download">
+              </x-button>
             </div>
             <m-define-user-count>
-              <x-table border height="100%" :data="tableData" v-if="tree&&tableData.length>0">
+              <x-table height="650" border :data="tableData" v-if="tree&&tableData.length>0">
                 <x-table-column v-for="(header, index) in tableHeaders" :key="index" :label="header.label"
                   :prop="header.prop">
                 </x-table-column>
@@ -95,35 +100,38 @@
         rowCount: 5,
         tableHeaders: [{
             label: '来源表',
-            prop: 'name'
+            prop: 'sourceTable'
           },
           {
             label: '来源字段',
-            prop: 'city'
+            prop: 'sourceTableField'
           },
           {
             label: '影响表',
-            prop: 'lastUsedTime'
+            prop: 'targetTable'
           },
           {
             label: '影响字段',
-            prop: 'lastUsedTime'
+            prop: 'targetTableField'
           }
         ],
         searchParams: {
-          pageSize: 10,
-          pageNo: 1,
+          // pageSize: 10,
+          // pageNo: 1,
           searchVal: '',
-          database: 'dolphinscheduler'
+          // database: 'dolphinscheduler'
         },
+        val: ''
       }
     },
     mounted() {
+      //拖拽
       // let box = document.querySelector('.box')
       // let move = JSON.parse(window.localStorage.getItem("move"))
       // box.style.left = move.x
       // box.style.top = move.y
     },
+    //拖拽
     // directives: {
     //   wahaha(el, binding) {
     //     el.onmousedown = function (ev) {
@@ -150,35 +158,53 @@
     // },
     mixins: [switchProject],
     methods: {
-      ...mapActions('resource', ['gettables', 'getrelation']),
+      ...mapActions('resource', ['gettables', 'getrelation', 'exportDefinition']),
       getList(flag) {
         this.isLoading = !flag
         this.gettables(this.searchParams).then(res => {
-          if (this.searchParams.pageNo > 1 && res.totalList.length == 0) {
-            this.searchParams.pageNo = this.searchParams.pageNo - 1
-          } else {
-            this.totalList = res.totalList
-            this.total = res.total
-            this.isLoading = false
-
-          }
+          this.totalList = res;
+          this.isLoading = false
+          // if (this.searchParams.pageNo > 1 && res.totalList.length == 0) {
+          //   this.searchParams.pageNo = this.searchParams.pageNo - 1
+          // } else {
+          //   this.totalList = res.data;
+          //   this.total = res.total
+          //   this.isLoading = false
+          // }
         }).catch(e => {
           this.$message.error(e.msg || '')
           this.isLoading = false
         })
       },
       gettableList(val) {
-        this.tree = false;
-        this.testLeftData = []
-        this.testData = []
         this.getrelation({
           tableName: val.label
         }).then(res => {
-          this.tree = true;
-          this.testLeftData.push(res.left)
-          this.testData.push(res.right)
-          console.log(this.testLeftData, this.testData);
-
+          this.tree = false;
+          this.testLeftData = []
+          this.testData = []
+          this.val = ''
+          setTimeout(() => {
+            this.tree = true;
+            this.val = val.label
+            this.testLeftData.push(res.left)
+            this.testData.push(res.right)
+            if (res.targetExcel.length > res.sourceExcel.length) {
+              this.tableData = res.targetExcel.map((item, index) => {
+                return {
+                  ...item,
+                  ...res.sourceExcel[index]
+                };
+              });
+            } else if (res.targetExcel.length <= res.sourceExcel.length) {
+              this.tableData = res.sourceExcel.map((item, index) => {
+                return {
+                  ...item,
+                  ...res.targetExcel[index]
+                };
+              });
+            }
+          }, 300);
         }).catch(e => {
           this.tree = false;
           this.testLeftData = []
@@ -190,6 +216,8 @@
         this.tree = false;
         this.testLeftData = []
         this.testData = []
+        this.tableData = []
+        this.val = ''
         this.getrelation({
           tableName: val
         }).then(res => {
@@ -202,6 +230,15 @@
           this.tree = false;
           this.testLeftData = []
           this.testData = []
+          this.$message.error(e.msg || '')
+        })
+      },
+      _export() {
+        let jsonStr = JSON.stringify(this.tableData);
+        this.exportDefinition({
+          data: jsonStr,
+          fileName: this.val
+        }).catch(e => {
           this.$message.error(e.msg || '')
         })
       },
