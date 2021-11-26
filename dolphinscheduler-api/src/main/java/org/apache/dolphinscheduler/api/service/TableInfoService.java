@@ -8,7 +8,6 @@ import org.apache.dolphinscheduler.api.enums.Status;
 import org.apache.dolphinscheduler.api.exceptions.ServiceException;
 import org.apache.dolphinscheduler.common.Constants;
 import org.apache.dolphinscheduler.dao.datasource.DynamicDataSourceContextHolder;
-import org.apache.dolphinscheduler.dao.datasource.aop.DataSource;
 import org.apache.dolphinscheduler.dao.datasource.aop.DataSourceType;
 import org.apache.dolphinscheduler.dao.entity.Lineage;
 import org.apache.dolphinscheduler.dao.entity.User;
@@ -52,7 +51,6 @@ public class TableInfoService extends BaseService {
      * @param searchVal search avlue
      * @return user list page
      */
-    @DataSource(DataSourceType.SLAVE)
     public Map<String, Object> queryTableInfoList(User loginUser, String searchVal) {
         Map<String, Object> result = new HashMap<>(5);
 
@@ -67,6 +65,7 @@ public class TableInfoService extends BaseService {
             logger.info("表格查询缓存命中");
             scheduleList = (List<TableInfoVo>) tableList;
         } else {
+            DynamicDataSourceContextHolder.setDataSourceType(DataSourceType.SLAVE.name());
             List<Map<String, String>> mapList = tableInfoMapper.queryDatabases();
 
             //查询所有表格
@@ -83,6 +82,7 @@ public class TableInfoService extends BaseService {
                     }
                 }
             }
+            DynamicDataSourceContextHolder.clearDataSourceType();
             //缓存3分钟
             cache.put("tableList", scheduleList, 1000 * 60 * 3);
         }
